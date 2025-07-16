@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon { margin: 10px; display: inline-block; }
+        canvas { border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Quick Icon Generator</h1>
+    <p>Right-click each icon below and "Save image as..." to the icons/ folder:</p>
+    
+    <div id="icons"></div>
+    
+    <script>
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#4285f4');
+            gradient.addColorStop(1, '#34a853');
+            
+            // Main background
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Inner white area
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(size * 0.08, size * 0.16, size * 0.84, size * 0.68);
+            
+            // Tab 1 (blue)
+            ctx.fillStyle = '#4285f4';
+            ctx.fillRect(size * 0.16, size * 0.23, size * 0.20, size * 0.12);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(size * 0.17, size * 0.25, size * 0.18, size * 0.08);
+            
+            // Tab 2 (green)
+            ctx.fillStyle = '#34a853';
+            ctx.fillRect(size * 0.39, size * 0.23, size * 0.20, size * 0.12);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(size * 0.40, size * 0.25, size * 0.18, size * 0.08);
+            
+            // Tab 3 (red)
+            ctx.fillStyle = '#ea4335';
+            ctx.fillRect(size * 0.62, size * 0.23, size * 0.20, size * 0.12);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(size * 0.63, size * 0.25, size * 0.18, size * 0.08);
+            
+            // Group indicator (yellow)
+            ctx.fillStyle = '#fbbc04';
+            ctx.fillRect(size * 0.20, size * 0.43, size * 0.60, size * 0.06);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(size * 0.21, size * 0.44, size * 0.58, size * 0.04);
+            
+            // Content lines
+            ctx.fillStyle = '#5f6368';
+            ctx.fillRect(size * 0.20, size * 0.55, size * 0.47, size * 0.02);
+            ctx.fillRect(size * 0.20, size * 0.61, size * 0.35, size * 0.02);
+            ctx.fillRect(size * 0.20, size * 0.67, size * 0.55, size * 0.02);
+            ctx.fillRect(size * 0.20, size * 0.73, size * 0.27, size * 0.02);
+            
+            return canvas;
+        }
+        
+        const sizes = [16, 32, 48, 128];
+        const container = document.getElementById('icons');
+        
+        sizes.forEach(size => {
+            const div = document.createElement('div');
+            div.className = 'icon';
+            
+            const canvas = createIcon(size);
+            div.appendChild(canvas);
+            
+            const label = document.createElement('div');
+            label.textContent = `icon${size}.png (${size}x${size})`;
+            label.style.textAlign = 'center';
+            label.style.marginTop = '5px';
+            div.appendChild(label);
+            
+            container.appendChild(div);
+        });
+    </script>
+</body>
+</html> 

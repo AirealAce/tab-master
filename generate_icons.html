@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h1>Tab & Group Saver Icon Generator</h1>
+    <p>This page can be used to generate PNG icons from the SVG. Open the browser console and run the following commands:</p>
+    
+    <h2>Instructions:</h2>
+    <ol>
+        <li>Open this file in a browser</li>
+        <li>Open Developer Tools (F12)</li>
+        <li>Run the JavaScript commands in the console</li>
+    </ol>
+    
+    <h2>Console Commands:</h2>
+    <pre>
+// Generate 16x16 icon
+generateIcon(16, 'icon16.png');
+
+// Generate 48x48 icon  
+generateIcon(48, 'icon48.png');
+
+// Generate 128x128 icon
+generateIcon(128, 'icon128.png');
+    </pre>
+    
+    <div id="canvas-container"></div>
+    
+    <script>
+        function generateIcon(size, filename) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Create SVG element
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', size);
+            svg.setAttribute('height', size);
+            svg.setAttribute('viewBox', '0 0 128 128');
+            
+            // SVG content (same as icon.svg)
+            svg.innerHTML = `
+                <circle cx="64" cy="64" r="60" fill="#4285f4" stroke="#1a73e8" stroke-width="4"/>
+                <g transform="translate(20, 30)">
+                    <rect x="0" y="0" width="25" height="15" rx="3" fill="#ffffff" stroke="#1a73e8" stroke-width="1"/>
+                    <rect x="2" y="2" width="21" height="11" rx="2" fill="#f8f9fa"/>
+                    <rect x="5" y="5" width="25" height="15" rx="3" fill="#ffffff" stroke="#1a73e8" stroke-width="1"/>
+                    <rect x="7" y="7" width="21" height="11" rx="2" fill="#e8f0fe"/>
+                    <rect x="10" y="10" width="25" height="15" rx="3" fill="#ffffff" stroke="#1a73e8" stroke-width="1"/>
+                    <rect x="12" y="12" width="21" height="11" rx="2" fill="#d2e3fc"/>
+                    <circle cx="35" cy="17" r="8" fill="#34a853" stroke="#ffffff" stroke-width="2"/>
+                    <text x="35" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#ffffff">G</text>
+                </g>
+                <g transform="translate(70, 70)">
+                    <rect x="0" y="0" width="20" height="25" rx="2" fill="#ffffff" stroke="#1a73e8" stroke-width="2"/>
+                    <polygon points="5,5 10,0 15,5" fill="#1a73e8"/>
+                    <rect x="7" y="8" width="6" height="2" fill="#1a73e8"/>
+                    <rect x="7" y="12" width="6" height="2" fill="#1a73e8"/>
+                    <rect x="7" y="16" width="6" height="2" fill="#1a73e8"/>
+                </g>
+                <g transform="translate(50, 100)">
+                    <path d="M 0 0 L 10 -5 L 10 5 Z" fill="#34a853"/>
+                    <line x1="0" y1="0" x2="20" y2="0" stroke="#34a853" stroke-width="3" stroke-linecap="round"/>
+                </g>
+            `;
+            
+            // Convert SVG to data URL
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            // Create image and draw to canvas
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, size, size);
+                
+                // Convert to blob and download
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                }, 'image/png');
+                
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+            
+            console.log(`Generated ${filename} (${size}x${size})`);
+        }
+    </script>
+</body>
+</html> 
