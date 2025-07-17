@@ -5,13 +5,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const testBtn = document.getElementById('testBtn');
     const restoreBtn = document.getElementById('restoreBtn');
     const saveBtn = document.getElementById('saveBtn');
+    const collapseBtn = document.getElementById('collapseBtn');
     const statusDiv = document.getElementById('status');
     const dropdownContent = document.getElementById('dropdownContent');
     const autosaveInput = document.getElementById('autosaveInterval');
     const saveAutosaveBtn = document.getElementById('saveAutosaveBtn');
     const autosaveStatus = document.getElementById('autosaveStatus');
     
-    console.log('Elements found:', { testBtn: !!testBtn, restoreBtn: !!restoreBtn, saveBtn: !!saveBtn, statusDiv: !!statusDiv, dropdownContent: !!dropdownContent });
+    console.log('Elements found:', { testBtn: !!testBtn, restoreBtn: !!restoreBtn, saveBtn: !!saveBtn, collapseBtn: !!collapseBtn, statusDiv: !!statusDiv, dropdownContent: !!dropdownContent });
     
     // Check if there's a saved session when popup opens
     checkSavedSession();
@@ -141,6 +142,48 @@ document.addEventListener('DOMContentLoaded', function() {
             showStatus('Error saving session. Please try again.', 'error');
             saveBtn.textContent = 'Save Current Session (Test)';
             saveBtn.disabled = false;
+        }
+    });
+    
+    // Add click event listener to collapse button
+    collapseBtn.addEventListener('click', async function() {
+        console.log('Collapse button clicked');
+        
+        try {
+            // Disable button and show loading state
+            collapseBtn.disabled = true;
+            collapseBtn.textContent = 'Collapsing...';
+            showStatus('Collapsing groups and suspending tabs...', 'info');
+            
+            console.log('Sending collapseAndSuspend message to background script');
+            
+            // Send message to background script to collapse groups and suspend tabs
+            const response = await chrome.runtime.sendMessage({ action: 'collapseAndSuspend' });
+            
+            console.log('Received collapse response from background script:', response);
+            
+            if (response && response.success) {
+                console.log('Collapse and suspend successful');
+                showStatus('Groups collapsed and tabs suspended successfully!', 'success');
+                collapseBtn.textContent = 'Completed';
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    collapseBtn.disabled = false;
+                    collapseBtn.textContent = 'Collapse Groups & Suspend Tabs';
+                }, 2000);
+            } else {
+                console.log('Collapse and suspend failed');
+                showStatus('Error collapsing groups or suspending tabs.', 'error');
+                collapseBtn.textContent = 'Collapse Groups & Suspend Tabs';
+                collapseBtn.disabled = false;
+            }
+            
+        } catch (error) {
+            console.error('Error in collapse button click handler:', error);
+            showStatus('Error collapsing groups and suspending tabs. Please try again.', 'error');
+            collapseBtn.textContent = 'Collapse Groups & Suspend Tabs';
+            collapseBtn.disabled = false;
         }
     });
     

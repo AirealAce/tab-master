@@ -1,3 +1,5 @@
+![Tab & Group Saver Demo](tab-master.gif)
+
 # Tab & Group Saver Chrome Extension
 
 A Chrome extension that automatically saves your browser session (tabs and tab groups) when Chrome closes and allows you to restore them with a keyboard shortcut.

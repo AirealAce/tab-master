@@ -134,19 +134,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep the message channel open for async response
   }
   
+  if (request.action === 'collapseAndSuspend') {
+    console.log('Handling collapseAndSuspend action');
+    
+    (async () => {
+      try {
+        await collapseAndSuspend();
+        console.log('Collapse and suspend completed successfully, sending success response');
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error('Error in collapse and suspend message handler:', error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Keep the message channel open for async response
+  }
+  
   console.log('Unknown action received:', request.action);
 });
 
 // On service worker startup, set up autosave alarm
-setupAutosaveAlarm();
+// setupAutosaveAlarm();
 
 // Listen for the alarm event
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'autosave') {
-    console.log('[autosave] Alarm triggered, saving session');
-    saveSession();
-  }
-});
+// chrome.alarms.onAlarm.addListener((alarm) => {
+//   if (alarm.name === 'autosave') {
+//     console.log('[autosave] Alarm triggered, saving session');
+//     saveSession();
+//   }
+// });
 // --- End Autosave Timer Logic ---
 
 /**
@@ -473,5 +489,115 @@ async function restoreSession() {
   } catch (error) {
     console.error('Error restoring session:', error);
     throw error; // Re-throw to be caught by the message handler
+  }
+}
+
+/**
+ * Collapses all tab groups except the one containing the active tab,
+ * then suspends all tabs except the active tab after a short delay
+ */
+async function collapseAndSuspend() {
+  try {
+    console.log('[collapseAndSuspend] Starting collapse and suspend operation...');
+    
+    // Get the currently active tab
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!activeTab) {
+      console.log('[collapseAndSuspend] No active tab found');
+      return;
+    }
+    
+    console.log('[collapseAndSuspend] Active tab:', activeTab.id, 'Group:', activeTab.groupId, 'Title:', activeTab.title);
+    
+    // Get the current window
+    const currentWindow = await chrome.windows.getCurrent();
+    const windowId = currentWindow.id;
+    
+    // Get all tab groups in the current window
+    const allGroups = await chrome.tabGroups.query({ windowId: windowId });
+    console.log('[collapseAndSuspend] Found', allGroups.length, 'groups in current window');
+    
+    // Collapse all groups except the one containing the active tab
+    const collapsePromises = [];
+    for (const group of allGroups) {
+      // Skip if this is the group containing the active tab
+      if (activeTab.groupId !== -1 && group.id === activeTab.groupId) {
+        console.log('[collapseAndSuspend] Skipping active tab group:', group.id, group.title);
+        continue;
+      }
+      
+      // Collapse this group if it's not already collapsed
+      if (!group.collapsed) {
+        console.log('[collapseAndSuspend] Collapsing group:', group.id, group.title);
+        collapsePromises.push(
+          chrome.tabGroups.update(group.id, { collapsed: true })
+            .catch(error => console.log('[collapseAndSuspend] Could not collapse group', group.id, ':', error.message))
+        );
+      } else {
+        console.log('[collapseAndSuspend] Group already collapsed:', group.id, group.title);
+      }
+    }
+    
+    // Wait for all groups to be collapsed
+    await Promise.all(collapsePromises);
+    console.log('[collapseAndSuspend] All groups collapsed successfully');
+    
+    // Wait a few milliseconds before suspending tabs
+    const suspensionDelay = 100; // 100ms delay as requested
+    await new Promise(resolve => setTimeout(resolve, suspensionDelay));
+    
+    // Get all tabs in the current window
+    const allTabs = await chrome.tabs.query({ windowId: windowId });
+    console.log('[collapseAndSuspend] Found', allTabs.length, 'tabs to potentially suspend');
+    
+    // Suspend all tabs except the active tab (if suspension is enabled)
+    if (!SUSPENSION_CONFIG.enabled) {
+      console.log('[collapseAndSuspend] Tab suspension is disabled in configuration');
+    } else {
+      const suspendPromises = [];
+      
+      for (const tab of allTabs) {
+        // Skip the active tab
+        if (tab.id === activeTab.id) {
+          console.log('[collapseAndSuspend] Skipping active tab:', tab.id, tab.title);
+          continue;
+        }
+        
+        // Skip pinned tabs
+        if (tab.pinned) {
+          console.log('[collapseAndSuspend] Skipping pinned tab:', tab.id, tab.title);
+          continue;
+        }
+        
+        // Check if it's a protected site
+        if (shouldNeverSuspend(tab.url)) {
+          console.log('[collapseAndSuspend] Skipping protected site tab:', tab.id, tab.url);
+          continue;
+        }
+        
+        // Skip special Chrome URLs
+        if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+          console.log('[collapseAndSuspend] Skipping special Chrome URL tab:', tab.id, tab.url);
+          continue;
+        }
+        
+        // Suspend this tab
+        console.log('[collapseAndSuspend] Suspending tab:', tab.id, tab.title);
+        suspendPromises.push(
+          chrome.tabs.discard(tab.id)
+            .catch(error => console.log('[collapseAndSuspend] Could not suspend tab', tab.id, ':', error.message))
+        );
+      }
+      
+      // Wait for all tabs to be suspended
+      await Promise.all(suspendPromises);
+      console.log('[collapseAndSuspend] Tab suspension completed');
+    }
+    
+    console.log('[collapseAndSuspend] Collapse and suspend operation completed successfully');
+    
+  } catch (error) {
+    console.error('[collapseAndSuspend] Error during collapse and suspend operation:', error);
+    throw error;
   }
 } 
