@@ -3,6 +3,39 @@
 
 console.log('Background service worker loaded');
 
+// Create context menu when the extension starts
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('Creating context menu...');
+  chrome.contextMenus.create({
+    id: "options",
+    title: "Options",
+    contexts: ["action"]
+  });
+});
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "options") {
+    console.log('Options context menu clicked, opening popup window...');
+    // Create a new window with the popup content
+    chrome.windows.create({
+      url: chrome.runtime.getURL('popup.html'),
+      type: 'popup',
+      width: 420,
+      height: 600,
+      focused: true
+    });
+  }
+});
+
+// Handle extension icon clicks (left-click)
+chrome.action.onClicked.addListener((tab) => {
+  console.log('Extension icon clicked, collapsing groups and suspending tabs...');
+  collapseAndSuspend().catch(error => {
+    console.error('Error during collapse and suspend operation:', error);
+  });
+});
+
 // QUICK CONFIGURATION - Set this to true to disable tab suspension entirely
 const DISABLE_SUSPENSION = false; // Set to true to disable suspension for maximum performance
 
